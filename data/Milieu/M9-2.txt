@@ -1,0 +1,6 @@
+NaCl
+mM CaCl2
+NH4Cl
+Agar
+MgSO4
+KH2PO4

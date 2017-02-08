@@ -1,7 +1,6 @@
 from codeGenetique import codeGenetique
 import sys
 import os.path
-import subprocess
 
 
 def pourcentage(seq):  # 6.1 --> DONE
@@ -132,7 +131,8 @@ def genes(fichier1, fichier2):  # 7.2 --> DONE
     fasta.close()
     return nouveauFichier
 
-def pourcentageFASTA(fichier):  # 7.3
+
+def pourcentageFASTA(fichier):  # 7.3 --> DONE
     f = open(fichier, 'r')
     id = ''
     for line in f:
@@ -154,7 +154,7 @@ def writeToFile(fichier, trad, id):  # Aux
     return nouveauFichier
 
 
-def traductionGenes(fichier):  # 7.4
+def traductionGenes(fichier):  # 7.4 --> DONE
     f = open(fichier, 'r')
     id = ''
     for line in f:
@@ -167,7 +167,7 @@ def traductionGenes(fichier):  # 7.4
     return nouveauFichier
 
 
-def tailleMoyenne(fichier):  # 7.5
+def tailleMoyenne(fichier):  # 7.5 --> DONE
     f = open(fichier, 'r')
     proteinCounter = 0
     acc = 0
@@ -181,11 +181,10 @@ def tailleMoyenne(fichier):  # 7.5
     print("Taille moyenne des proteines: " + str(taille))
 
 
-def pourcentageCodante(fichier, total): # 7.6
-    # PRE: fichier des genes + nombre total des nucleotides du genome
+def pourcentageCodante(fichier, total):  # 7.6 --> DONE
     data = newOrder(fichier)
-    percentage = len(data) / total
-    print(str(percentage))
+    percentage = len(data) / float(total)
+    return str(percentage * 100) + ' %'
 
 
 def main():
@@ -209,22 +208,29 @@ def main():
     # final('fasta.txt', 58021)
 
     if sys.argv[1] == "-h" or sys.argv[1] == "--help":
-        print ('Usage: python ' + sys.argv[0] + ' PATH_TO_TAB_FILE PATH_TO_GENOME')
-    else:
+        print ('Usage:')
+        print ('\t[1] python ' + sys.argv[0] + ' proteines PATH_TO_TAB_FILE PATH_TO_GENOME')
+        print ('\t[2] python ' + sys.argv[0] + ' codantePercent PATH_TO_FASTA_GENES_FILE TOTAL_NUCLEOTIDES')
+        print ('\t[3] python ' + sys.argv[0] + ' pourcentageGenes PATH_TO_FASTA_GENES')
+    elif (sys.argv[1] == "proteines"):
         # Creation d'un fichier au format fasta avec les genes d'un genome
         print('Extraction des genes a partir d\'un genome')
-        fastaGenes = genes(sys.argv[1], sys.argv[2])
+        fastaGenes = genes(sys.argv[2], sys.argv[3])
         print('Nouveau fichier: ' + fastaGenes)
 
         # Creation d'un fichier avec les proteines des diferents fichiers
         print('Traduction des genes a proteines')
         fastaProteines = traductionGenes(fastaGenes)
         print('Nouveau fichier: ' + fastaProteines)
-        tailleMoyenne(sys.argv[1])
+        tailleMoyenne(sys.argv[2])
+    elif (sys.argv[1] == 'codantePercent'):
+        percentage = pourcentageCodante(sys.argv[2], sys.argv[3])
+        print('Pourcentage de la region codante pour le fichier: ')
+        print ('\t' + sys.argv[2] + ' = ' + percentage)
+    elif (sys.argv[1] == 'pourcentageGenes'):
+        pourcentageFichier(sys.argv[2])
+    else:
+        print('Please, give me a valid option')
 
-        # Pourcentage de la region codante
-        # print('Pourcentage de la region codante de une spece')
-        # total = subprocess.Popen("grep -v \">\" " + sys.argv[2] + " | wc - c", shell=True)
-        # pourcentageCodante(fastaGenes, total)
 
 main()
