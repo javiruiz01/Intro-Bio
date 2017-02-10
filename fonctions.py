@@ -36,8 +36,6 @@ def orf_aux(seq):  # 6.4 AUX
     start = 'ATG'
     stop = ['TAA', 'TAG', 'TGA']
     begin = False
-    # seq = seq[offset: len(seq)]
-    # print ("From AUX, the sequence is: " + seq)
     for i in range(0, len(seq), 3):
         codon = seq[i:i + 3]
         if (len(codon) % 3 != 0):
@@ -122,7 +120,7 @@ def genes(fichier1, fichier2):  # 7.2 --> DONE
         if orientation == '-':
             data = data[::-1]
         # Faut chercher ATG?
-        data = orf_aux(data)
+        # data = orf_aux(data)
         data = ''.join(data)
         # Maintenant on fait le fichier avec format ASTA
         if len(data) != 0:
@@ -188,25 +186,6 @@ def pourcentageCodante(fichier, total):  # 7.6 --> DONE
 
 
 def main():
-    # pourcentage("ACCTGGACAT") # 6.1
-    # for item in nombreCG("AACGTGGCACG"): # 6.2
-    #     print item
-    # for item in listeCodons("AACGTGGCA"): # 6.3
-    #     print item
-    # Seq= "CCTCAGCGAGGACAGCAAGGGACTAGCCAGGAGGGAGAACAGAAACTCCAGAACATCTTGGAAATAGCTCCCAGAAAAGCAAGCAGCCAACCAGGCAGGTTCTGTCCCTTTCACTCACTGGCCCAAGGCGCCACATCTCCCTCCAGAAAAGACACCATGAGCACAGAAAGCATGATCCGCGACGTGGAACTGGCAGAAGAGGCACTCCCCCAAAAGATGGGGGGCTTCCAGAACTCCAGGCGGTGCCTATGTCTCAGCCTCTTCTCATTCCTGCTTGTGGCAGGGGCCACCACGCTCTTCTGTCTACTGAACTTCGGGGTGATCGGTCCCCAAAGGGATGAGAAGTTCCCAAATGGCCTCCCTCTCATCAGTTCTATGGCCCAGACCCTCACACTCAGATCATCTTCTCAAAATTCGAGTGACAAGCCTGTAGCCCACGTCGTAGCAAACCACCAAGTGGAGGAGCAGCTGGAGTGGCTGAGCCAGCGCGCCAACGCCCTCCTGGCCAACGGCATGGATCTCAAAGACAACCAACTAGTGGTGCCAGCCGATGGGTTGTACCTTGTCTACTCCCAGGTTCTCTTCAAGGGACAAGGCTGCCCCGACTACGTGCTCCTCACCCACACCGTCAGCCGATTTGCTATCTCATACCAGGAGAAAGTCAACCTCCTCTCTGCCGTCAAGAGCCCCTGCCCCAAGGACACCCCTGAGGGGGCTGAGCTCAAACCCTGGTATGAGCCCATATACCTGGGAGGAGTCTTCCAGCTGGAGAAGGGGGACCAACTCAGCGCTGAGGTCAATCTGCCCAAGTACTTAGACTTTGCGGAGTCCGGGCAGGTCTACTTTGGAGTCATTGCTCTGTGAAGGGAATGGGTGTTCATCCATTTCTACCCAGCCCCCACTCTGACCCCTTTACTCTGACCCCTTTATTGTCTACTCCTCAGAGCCCCCAGTCTGTATCCTTCTAACTTAGAAAGGGGATTATGGCTCAGGGTCCAACTCTGTGCTCAGAGCTTTCAACAACTACTCAGAAACACAAGATGCTGGGACAGTGACCTGGACTGTGGGCCTCTCATGCACCACCATCAAGGACTCAAAGGGCTTTCCGAATTCACTGGAGCCTCGAATGTCCATTCCTGAGTTCTGCAAAGGGAGAGTGGTCAGGTTGCCTCTGTCTCAGAATGAGGCTGGATAAGATCTCAGGCCTTCCTACCTTCAGACCTTTCCAGATTCTTCCCTGAGGTGCAATGCACAGCCTTCCTCACAGAGCCAGCCCCCCTCTATTTATATTTGCACTTATTATTTATTATTTATTTATTATTTATTTATTTGCTTATGAATGTATTTATTTGGAAGGCCGGGGTGTCCTGGAGGACCCAGTGTGGGAAGCTGTCTTCAGACAGACATGTTTTCTGTGAAAACGGAGCTGAGCTGTCCCCACCTGGCCTCTCTACCTTGTTGCCTCCTCTTTTGCTTATGTTTAAAACAAAATATTTATCTAACCCAATTGTCTTAATAACGCTGATTTGGTGACCAGGCTGTCGCTACATCACTGAACCTCTGCTCCCCACGGGAGCCGTGACTGTAATCGCCCTACGGGTCATTGAGAGAAATAA"
-    # for item in orfs(Seq): # 6.4
-    #     print item
-    # print complementaire('AACGTGGCA') # 6.5
-    # for item in traduction('') # 6.6
-    #     print item
-    # pourcentageFichier(sys.argv[1])
-    # genes('../data/Escherichia.coli/Escherichia.coli.tab', '../data/Escherichia.coli/Escherichia.coli.genome')
-    # pourcentageFASTA('fasta.txt')
-    # traductionGenes('fasta.txt')
-    # En parametre passer les fichiers genome et tout
-    # tailleMoyenne('fastaProteines.txt')
-    # final('fasta.txt', 58021)
-
     if sys.argv[1] == "-h" or sys.argv[1] == "--help":
         print ('Usage:')
         print ('\t[1] python ' + sys.argv[0] + ' proteines PATH_TO_TAB_FILE PATH_TO_GENOME')
@@ -217,7 +196,6 @@ def main():
         print('Extraction des genes a partir d\'un genome')
         fastaGenes = genes(sys.argv[2], sys.argv[3])
         print('Nouveau fichier: ' + fastaGenes)
-
         # Creation d'un fichier avec les proteines des diferents fichiers
         print('Traduction des genes a proteines')
         fastaProteines = traductionGenes(fastaGenes)
