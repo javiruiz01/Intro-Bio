@@ -1,6 +1,20 @@
+import math
+
 from codeGenetique import codeGenetique
+from freqCodons import freq_par_aa
 import matplotlib.pyplot as plt
 import os.path
+
+
+def pourcentage(sequence):
+    length = len(sequence)
+    D = {
+        'A': (float(sequence.count('A')) / length),
+        'C': (float(sequence.count('C')) / length),
+        'G': (float(sequence.count('G')) / length),
+        'T': (float(sequence.count('T')) / length)
+    }
+    return D
 
 
 def newOrder(fichier):  # 7.1 AUX
@@ -16,8 +30,6 @@ def newOrder(fichier):  # 7.1 AUX
 
 def orfs(seq):
     cds = []
-    # seqs = [seq, complementaire(seq)]
-    # for s in seqs:
     pos = []
     for i in range(0, 3):
         seq_aux = seq[i:len(seq)]
@@ -97,10 +109,10 @@ def seuilToTab(fichier):  # On prend comme seuil 201
 
 def senSpe(matrice):
     vraip = matrice[1][1]
-    sen = vraip / (vraip + matrice[1][0])
+    sen = vraip / float(vraip + matrice[1][0])
     vn = matrice[0][0]
-    spe = vn / (vn + matrice[0][1])
-    vp = vraip / (vraip + matrice[0][1])
+    spe = vn / float(vn + matrice[0][1])
+    vp = vraip / float(vraip + matrice[0][1])
     return sen, spe, vp
 
 
@@ -128,7 +140,8 @@ def genes(fichier1, fichier2):
         identifiant = line.split("\t")[5]
         data = genome[int(replicon) - 1:int(accesion) - 3]
         if orientation == '-':
-            data = data[::-1]
+            # data = data[::-1]
+            continue
         # Faut chercher ATG?
         # data = orf_aux(data)
         data = ''.join(data)
@@ -136,7 +149,8 @@ def genes(fichier1, fichier2):
         if len(data) != 0:
             # fasta.write(">" + identifiant + "\n")
             fasta.write(
-                identifiant + "\t" + str(int(replicon) - 1) + "\t" + str(int(accesion) - 3) + "\t" + data + "\n")
+                identifiant + "\t" + str(int(replicon) - 1) + "\t" + str(int(accesion) - 3) + "\t" + data + "\n"
+            )
     fasta.close()
     return nouveauFichier, length
 
@@ -158,12 +172,87 @@ def compare_intervalle(genome, orfs):
     return result
 
 
-def evaluation(fichierGenes, fichierSeuil, length):
+def genesToList(fichierGenes, length):
+    f1 = open(fichierGenes, 'r')
     result = [0] * length
-    f1 = open(fichierGenes, "r")
-    f2 = open(fichierSeuil, "r")
     for line in f1:
-        print "holita que tal"
+        gene = line.split("\t")[3]
+        if not gene.startswith("ATG"):
+            continue
+        replicon = line.split("\t")[1]
+        accesion = line.split("\t")[2]
+        for j in range(int(replicon), int(accesion)):
+            result[j] = 1
+    return result
+
+
+def seuilToList(fichierSeuil, length):
+    f1 = open(fichierSeuil, 'r')
+    result = [0] * length
+    for line in f1:
+        if line.startswith("START"):
+            continue
+        start = line.split("\t")[0]
+        end = line.split("\t")[1]
+        for j in range(int(start), int(end)):
+            result[j] = 1
+    return result
+
+
+def evaluation(fichierGenes, fichierSeuil, length):
+    genes = genesToList(fichierGenes, length)
+    seuil = seuilToList(fichierSeuil, length)
+    return compare_intervalle(genes, seuil)
+
+
+def compteCodons(sequences):
+    # On resoit une liste de frequences
+    total = 0
+    for item in sequences:
+        for i in range(0, len(item), 3):
+            codon = item[i:i + 3]
+            if not (len(codon) % 3 == 0):
+                break
+            freq_par_aa[codon] += 1
+            total += 1
+    total += 64
+    # D = {key:value for key, value in freq_par_aa.items()}
+    D = freq_par_aa
+    for i in D:
+        D[i] = (float(freq_par_aa[i]) / total) * 100
+        print ("KEY: " + i + " VALUE: " + str(D[i]))
+    return D
+
+
+def logproba(liste_lettres, tuple_frequences):  # tuple frequences cest avec la fonction frequences
+    total = 0
+    for i in liste_lettres:
+        total += math.log(float(tuple_frequences[i]), 2)
+    return total
+
+
+def logprobagene(sequence, frequences):  # frequences c'est le dictionaire de compteCodons
+    total = 0
+    for i in range(0, len(sequence), 3):
+        codon = sequence[i:i + 3]
+        if not (len(codon) % 3 == 0):
+            break
+        total += math.log(frequences[codon], 2)
+    return total
+
+
+def isItGene(sequence, dictLettres, dictCodons):
+    logLettres = logproba(sequence, dictLettres)
+    logCodon = logprobagene(sequence, dictCodons)
+    if logCodon - logLettres > 1:
+        print "Oui :)"
+    else:
+        print "Non!!!!!!!!!!!!!!!!!"
+    return
+
+
+def graphique(genome, fenetre):
+    print "Holita"
 
 def main():
     # data = newOrder("data/Escherichia.coli/Escherichia.coli.genome")
@@ -184,6 +273,38 @@ def main():
     # print result
 
     # genes("data/Escherichia.coli/Escherichia.coli.tab", "data/Escherichia.coli/Escherichia.coli.genome")
+
+    # data = newOrder("data/Escherichia.coli/Escherichia.coli.genome")
+    # result = evaluation("genesEscherichia.coli.txt", "seuil.tab", len(data))
+    # print "4,641,652 == " + str(len(data))
+    # print "[[vn, fp], [fn, vp]]"
+    # print result
+    # sen, spe, vp = senSpe(result)
+    # print ("SEN = " + str(sen) + "\nSPE = " + str(spe) + "\nVP = " + str(vp))
+    # # Pour E.coli:
+    # # 4, 641, 652 == 4641652
+    # # [[vn, fp], [fn, vp]]
+    # # [[1906908, 1027207], [6606, 1700931]]
+    # # SEN = 0.996131269776
+    # # SPE = 0.649909086726
+    # # VP = 0.623476891565
+
+
+    # On va utiliser le fichier seuil.txt, avec les genes commensant par START et finissant par STOP
+    f1 = open("seuil.tab", 'r')
+    sequences = []
+    for line in f1:
+        if line.startswith("START"):
+            continue
+        sequence = line.split("\t")[2]
+        sequences.append(sequence[0:len(sequence) - 1])
+    # sequences = "AGCTTTTCATTCTGACTGCAACGGGCAATATGTCTCTGTGTGGATTAAAAAAAGAGTGTCTGATAGCAGCTTCTGAACTGGTTACCTGCCGTGAGTAAATTAAAATTTTATTGACTTAGGTCACTAAATACTTTAACCAATATAGGCATAGCGCACAGAC"
+    DCodons = compteCodons(sequences)
+    data = newOrder("data/Escherichia.coli/Escherichia.coli.genome")
+    DLettres = pourcentage(data)
+
+    for seq in sequences:
+        isItGene(seq, DLettres, DCodons)
 
     print ('Holita')
 
