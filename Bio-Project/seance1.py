@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import matplotlib.pyplot as plt
 import os.path
+import shutil
 
 # On travaille avec les genomes Vibrio Cholerae et E. Coli
 coli = "./data/Escherichia.coli.fasta"
@@ -109,7 +110,7 @@ def gcBlocPercentage(sequence):
 
 
 # Histogramme de la distribution de GCs
-def histogrammeGC(blocs, name):
+def histogrammeGCBlocs(blocs, name):
     percents = []
     for bloc in blocs:
         d = gcBlocPercentage(bloc)
@@ -198,11 +199,11 @@ def genes(genomeFile, tabFile):
     genome = newOrder(genomeFile)
     length = len(genome)
     next(tab)  # On saute la premiere ligne
-    fastaFile = open("genes_codants.fasta", 'a+')
+    fastaFile = open("genes_codants_" + os.path.basename(tabFile)[0:-4] + ".fasta", 'a+')
     counter = 0
     for line in tab:
-        replicon = line.split("\t")[2] # Start
-        accesion = line.split("\t")[3] # End
+        replicon = line.split("\t")[2]  # Start
+        accesion = line.split("\t")[3]  # End
         orientation = line.split("\t")[4]
         # identifiant = line.split("\t")[5]
         data = genome[int(replicon) - 1:int(accesion) - 3]
@@ -217,19 +218,20 @@ def genes(genomeFile, tabFile):
     tab.close()
     return fastaFile
 
+
 # Creation d'un fichier avec les genes non codants, cad,
 # les parties du gene qui ne sont pas dans le fichier tab
 def nonCodants(genomeFile, tabFile):
     tab = open(tabFile, 'r')
     genome = newOrder(genomeFile)
     next(tab)
-    fastaFile = open("genes_non_codants.fasta", 'a+')
+    fastaFile = open("genes_non_codants_" + os.path.basename(tabFile)[0:-4] + ".fasta", 'a+')
     counter = 0
     position = 0
     for line in tab:
         start = line.split("\t")[2]
         data = genome[int(position): int(start)]
-        position = line.split("\t")[3] # Position est la position de la fin du gene codant
+        position = line.split("\t")[3]  # Position est la position de la fin du gene codant
         if len(data) != 0:
             counter += 1
             fastaFile.write('Sequence_non_codante_' + str(counter) + "\n")
@@ -237,6 +239,48 @@ def nonCodants(genomeFile, tabFile):
     fastaFile.close()
     tab.close()
     return fastaFile
+
+
+# Calculer pour chaque gene son pourcentage en GC et mettre a jour le fichier tab
+def updateTabFile(genes_codants):
+    f = open(genes_codants, 'rw+')
+    newFile = open("tmp.fasta", 'a+')
+    for line in f:
+        if line.startswith(">"):
+            newFile.write(line)
+            continue
+        d = gcBlocPercentage(line[0:len(line) - 1])
+        percent = float(d['C'] + d['G']) * 100
+        newFile.write(str(percent) + "\t" + line)
+    f.close()
+    newFile.close()
+    os.rename(f.name, f.name + "_old")
+    os.rename("tmp.fasta", f.name)
+    return
+
+
+# Histogramme des pourcentages en GC des gènes
+def histogramGCgenes(fastaFile, name):
+    f = open(fastaFile, 'r')
+    percents = []
+    for line in f:
+        if line.startswith(">"):
+            continue
+        percents.append(float(line.split("\t")[0]))
+    plt.hist(percents)
+    plt.title(name)
+    plt.show()
+
+
+# Fonction pour ranger tous les noveaus fichier crees
+def cleanUp():
+    if os.path.exists("fasta_files"):
+        shutil.rmtree('./fasta_files/')
+        # os.removedirs("fasta_files")
+    os.makedirs("./fasta_files")
+    for file in os.listdir("./"):
+        if file.endswith("fasta") or file.endswith("fsa") or file.endswith("fasta_old"):
+            os.rename(file, "./fasta_files/" + file)
 
 
 def main():
@@ -284,19 +328,21 @@ def main():
     print "Number of blocs that we will be analysing from Vibrio Cholerae = " + str(len(blocsCholerae))
 
     # Histogramme de la distribution de GC
-    print "Histogramme with the distribution of GC in each bloc, uncomment to see graphics."
-    # histogrammeGC(blocsColi, "E. Coli")
-    # histogrammeGC(blocsCholerae, "Vibrio Cholerae")
+    print "Histogram with the distribution of GC in each bloc, uncomment to see graphics."
+    # histogrammeGCBlocs(blocsColi, "E. Coli")
+    # histogrammeGCBlocs(blocsCholerae, "Vibrio Cholerae")
 
     # ORFs du genome choisi et creation du fichier FASTA
-    if not os.path.exists("./orfFasta.fsa"):
-        print "Creation of FASTA file for submission at NCBI's glimmer tool for Vibrio Cholerae"
-        print str(len(orfs(newOrder(cholerae)))) + " = Length of the ORFs"
+    if os.path.exists("orfFasta.fsa"):
+        os.remove("orfFasta.fsa")
+    print "Creation of FASTA file for submission at NCBI's glimmer tool for Vibrio Cholerae"
+    print str(len(orfs(newOrder(cholerae)))) + " = Length of the ORFs"
 
     # Extraire sequences codantes des genes a partir du fichier tab
-    if not os.path.exists("genes_codants.fasta"):
-        print "Creation of FASTA file with coding genes for Vibrio Cholerae"
-        genes(cholerae, tabCholerae)
+    if os.path.exists("genes_codants_Vibrio_cholerae.fasta"):
+        os.remove("genes_codants_Vibrio_cholerae.fasta")
+    print "Creation of FASTA file with coding genes for Vibrio Cholerae"
+    genes(cholerae, tabCholerae)
 
     # print "Attention, on a 74122 genes codants si on calcule les ORFs, mais avec le fichier tab, on en trouve que 3504"
     # print "On va supposer que c'est bon car on trouve 37275 ATG dans le genome du Vibrio Cholerae"
@@ -304,8 +350,33 @@ def main():
 
     # Creation d'un fichier avec les genes non codants, cad,
     # les parties du gene qui ne sont pas dans le fichier tab
-    if not os.path.exists("genes_non_codants.fasta"):
-        print "Creation of FASTA file with non-coding genes for Vibrio Cholerae"
-        nonCodants(cholerae, tabCholerae)
+    if os.path.exists("genes_non_codants_Vibrio_cholerae.fasta"):
+        os.remove("genes_non_codants_Vibrio_cholerae.fasta")
+    print "Creation of FASTA file with non-coding genes for Vibrio Cholerae"
+    nonCodants(cholerae, tabCholerae)
+
+    # Calculer pour chaque gene son pourcentage en GC et mettre a jour le fichier tab
+    print "Updating FASTA file with coding genes and adding percentage in GC nucleotides"
+    updateTabFile("genes_codants_Vibrio_cholerae.fasta")
+
+    # Histogramme des pourcentages en GC des gènes
+    print "Histogram with the distribution of GC in each coding gene for Vibrio Cholerae, uncomment to see graphic"
+    # histogramGCgenes("genes_codants.fasta", "Pourcentage en GC des genes codants de Vibrio Cholerae")
+
+    print "Now we do everything we need to do to compare it to E. Coli, we will be using the tab file"
+    if os.path.exists("genes_codants_Escherichia.coli.fasta"):
+        os.remove("genes_codants_Escherichia.coli.fasta")
+    print "\tCreation of FASTA file with coding genes for E. Coli"
+    genes(coli, tabColi)
+
+    print "\tUpdating FASTA file with coding genes and adding percentage in GC nucleotides"
+    updateTabFile("genes_codants_Escherichia.coli.fasta")
+
+    print "\tHistogram with the distribution of GC in each coding gene for E. Coli, uncomment to see graphic"
+    # histogramGCgenes("genes_codants_Escherichia.coli.fasta", "Pourcentage en GC des genes codants de E. Coli")
+
+    print "Cleaning up"
+    cleanUp()
+
 
 main()
