@@ -130,7 +130,8 @@ def histogrammeGCBlocs(blocs, name):
 def orfs(sequence):
     cds = []
     pos = []
-    seqs = [sequence, complementaire(sequence)]
+    seqs = [sequence, complementaire(sequence)[
+                      ::-1]]  # TODO: Attention, je crois qu'on doit inverser lorsqu'on fait le complementaire
     for seq in seqs:
         for i in range(0, 3):
             seq_aux = seq[i:len(seq)]
@@ -152,8 +153,12 @@ def complementaire(seq):
     result = ''
     for i in seq:
         # TODO: Faire attention a ça, il ya des "Y" dans le gene
-        if i not in dic:
-            continue
+        if i == "Y" or i == "S" or i == "M":
+            i = "C"
+        if i == "W" or i == "K" or i == "N":
+            i = "T"
+        if i == "R":
+            i = "A"
         result += dic[i]
     return result
 
@@ -208,14 +213,17 @@ def genes(genomeFile, tabFile):
     fastaNonCodants = open("genes_non_codants_" + os.path.basename(tabFile)[0:-4] + ".fasta", 'a+')
     counter = 0
     counter_non_codants = 0
+    codonStart = False
     for line in tab:
-        replicon = line.split("\t")[2]  # Start
-        accesion = line.split("\t")[3]  # End
+        start = line.split("\t")[2]  # Start
+        end = line.split("\t")[3]  # End
         orientation = line.split("\t")[4]
         # identifiant = line.split("\t")[5]
-        data = genome[int(replicon) - 1:int(accesion) - 3]
         if orientation == '-':
-            data = data[::-1] # TODO: Penser que si on inverse la seq, alors elle ne commence plus par ATG
+            data = genome[int(start) - 1: int(end)][::-1]
+            data = complementaire(data)
+        else:
+            data = genome[int(start) - 1:int(end) - 3]
         data = ''.join(data)
         nStopTAA = data.count("TAA")
         nStopTAG = data.count("TAG")
@@ -297,6 +305,102 @@ def cleanUp():
             os.rename(file, "./fasta_files/" + file)
 
 
+def seance1():
+    # Nombre de chromosomes
+    totalColi = nChromosomes(coli)
+    totalCholerae = nChromosomes(cholerae)
+    print "Total number of chromosomes:\n\tE.Coli = " + str(totalColi) + "\n\tVibrio Cholerae = " + str(totalCholerae)
+
+    # Longueur de chromosomes
+    i = 0
+    lengthColi = lengthChromosome(coli)
+    for length in lengthColi:
+        i += 1
+        print "Length of the " + str(i) + " chromosome from E. Coli = " + str(length)
+    i = 0
+    lengthCholerae = lengthChromosome(cholerae)
+    for length in lengthCholerae:
+        i += 1
+        print "Length of the " + str(i) + " chromosome from Vibrio Cholerae = " + str(length)
+
+    # Longueur totale du genome
+    print "Total length of E. Coli = " + str(totalLength(coli))
+    print "Total length of Vibirio Cholerae = " + str(totalLength(cholerae))
+
+    # Composition en nucleotides
+    dColi = pourcentage(coli)
+    for item in dColi:
+        print "Percentage of " + item + " in E. Coli = " + str(dColi[item])
+    dCholerae = pourcentage(cholerae)
+    for item in dColi:
+        print "Percentage of " + item + " in Vibrio Cholerae = " + str(dCholerae[item])
+
+    # Pourcentage en GC global
+    # Cas ou GC veut dire la chaine GC
+    # print "Pourcentage en GC global de E. Coli = " + str(gcPercent(newOrder(coli)))
+    # print "Pourcentage en GC global de Vibrio Cholerae = " + str(gcPercent(newOrder(cholerae)))
+    # Cas ou on veut la somme des G et des C
+    print "Percentage of GC in E. Coli = " + str(dColi['G'] + dColi['C'])
+    print "Percentage of GC in Vibrio Cholerae = " + str(dCholerae['G'] + dCholerae['C'])
+
+    # Découpez le génome en blocs 1kbp non chevauchants
+    blocsColi = decoupage(coli, tabColi)
+    print "Number of blocs that we will be analysing from E. Coli = " + str(len(blocsColi))
+    blocsCholerae = decoupage(cholerae, tabCholerae)
+    print "Number of blocs that we will be analysing from Vibrio Cholerae = " + str(len(blocsCholerae))
+
+    # Histogramme de la distribution de GC
+    print "Histogram with the distribution of GC in each bloc, uncomment to see graphics."
+    # histogrammeGCBlocs(blocsColi, "E. Coli")
+    # histogrammeGCBlocs(blocsCholerae, "Vibrio Cholerae")
+
+    # ORFs du genome choisi et creation du fichier FASTA
+    if os.path.exists("orfFasta.fsa"):
+        os.remove("orfFasta.fsa")
+    print "Creation of FASTA file for submission at NCBI's glimmer tool for Vibrio Cholerae"
+    print str(len(orfs(newOrder(cholerae)))) + " = Length of the ORFs"
+
+    # Extraire sequences codantes des genes a partir du fichier tab
+    if os.path.exists("genes_codants_Vibrio_cholerae.fasta"):
+        os.remove("genes_codants_Vibrio_cholerae.fasta")
+    print "Creation of FASTA file with coding genes for Vibrio Cholerae"
+    genes(cholerae, tabCholerae)
+
+    # print "Attention, on a 74122 genes codants si on calcule les ORFs, mais avec le fichier tab, on en trouve que 3504"
+    # print "On va supposer que c'est bon car on trouve 37275 ATG dans le genome du Vibrio Cholerae"
+    # print "Et donc, si on prend en compte que on doit calculer aussi son complementaire, ça fait du sens"
+
+    # Creation d'un fichier avec les genes non codants, cad,
+    # les parties du gene qui ne sont pas dans le fichier tab
+    if os.path.exists("genes_non_codants_Vibrio_cholerae.fasta"):
+        os.remove("genes_non_codants_Vibrio_cholerae.fasta")
+    print "Creation of FASTA file with non-coding genes for Vibrio Cholerae"
+    nonCodants(cholerae, tabCholerae)
+
+    # Calculer pour chaque gene son pourcentage en GC et mettre a jour le fichier tab
+    print "Updating FASTA file with coding genes and adding percentage in GC nucleotides"
+    updateTabFile("genes_codants_Vibrio_cholerae.fasta")
+
+    # Histogramme des pourcentages en GC des gènes
+    print "Histogram with the distribution of GC in each coding gene for Vibrio Cholerae, uncomment to see graphic"
+    # histogramGCgenes("genes_codants.fasta", "Pourcentage en GC des genes codants de Vibrio Cholerae")
+
+    print "Now we do everything we need to do to compare it to E. Coli, we will be using the tab file"
+    if os.path.exists("genes_codants_Escherichia.coli.fasta"):
+        os.remove("genes_codants_Escherichia.coli.fasta")
+    print "\tCreation of FASTA file with coding genes for E. Coli"
+    genes(coli, tabColi)
+
+    print "\tUpdating FASTA file with coding genes and adding percentage in GC nucleotides"
+    updateTabFile("genes_codants_Escherichia.coli.fasta")
+
+    print "\tHistogram with the distribution of GC in each coding gene for E. Coli, uncomment to see graphic"
+    # histogramGCgenes("genes_codants_Escherichia.coli.fasta", "Pourcentage en GC des genes codants de E. Coli")
+
+    print "Cleaning up"
+    cleanUp()
+
+
 ####################
 #   </Seance 1>    #
 ####################
@@ -305,20 +409,6 @@ def cleanUp():
 ##################
 #   <Seance 2>   #
 ##################
-
-
-def cleanGlimmerFile(glimmerFile):
-    f = open(glimmerFile, 'rw+')
-    newFile = open("tmp.txt", 'a+')
-    for line in f:
-        # " ".join(line.split())
-        line.replace("    ", "\t")
-        newFile.write(line)
-    f.close()
-    newFile.close()
-    # os.remove("glimmer_data.txt")
-    os.rename("tmp.txt", "glimmer_data1.txt")
-    return
 
 
 # Histogramme generique
@@ -353,128 +443,76 @@ def lengthTabFile(tabFile, name):
 
 
 # Fonction qui cree une liste de 1s et 0s en comparant le fichier de prediction (ORFs ou Glimmer) et le genome
-def binaryList(predictFile, geneFile):
-    prediction = open(predictFile, 'r')
-    genome_0 = newOrder(geneFile) # frame 3
-    genome_1 = genome_0[1:len(genome_0) - 1]
-    genome_2 = genome_0[2:len(genome_0) - 2]
-    binary = []
-    for line in predictFile:
-        print "holita"
+def binaryGlimmer(glimmerFile, genomeFile):  # TODO: On ne se preoccupe pas du frame, on s'interesse qu'aux positions
+    glimmer = open(glimmerFile, 'r')
+    genome = newOrder(genomeFile)
+    binary = [0] * len(genome)
+    for line in glimmer:
+        if not line.startswith("orf"):
+            continue
+        start = line.split("    ")[1]
+        end = line.split("    ")[2]
+        if int(start) > int(end):
+            start, end = end, start
+        for i in range(int(start), int(end)):
+            binary[i] = 1
+    return binary
+
+
+# Fonction qui cree une liste de 1s et 0s en comparant le fichier .tab et le genome
+def binaryTab(tabFile, genomeFile):
+    tab = open(tabFile, 'r')
+    genome = newOrder(genomeFile)
+    binary = [0] * len(genome)
+    for line in tab:
+        if line.startswith("#"):
+            continue
+        start = line.split("\t")[2]
+        end = line.split("\t")[3]
+        for i in range(int(start), int(end)):
+            binary[i] = 1
+    return binary
+
+
+# Comparation des annotations (binary) issues de glimmer et du fichier tab
+def compare_intervalle(glimmerBinary, tabBinary):
+    vp = vn = fn = fp = 0
+    length = len(glimmerBinary)
+    for i in range(0, length):
+        glimmer = glimmerBinary[i]
+        tab = tabBinary[i]
+        if glimmer + tab == 2:
+            vp += 1
+        elif glimmer + tab == 0:
+            vn += 1
+        elif glimmer > tab:
+            fn += 1
+        else:
+            fp += 1
+    return [[vn, fp], [fn, vp]]
+
+
+# Fonction qui, a partir du resultat (matrice) de la fonction compare_intervalle
+# Donne la specifité, la sensibilite et le taux de vrais poistifs
+def senSpe(matrice):
+    vraip = matrice[1][1]
+    sen = vraip / float(vraip + matrice[1][0])
+    vn = matrice[0][0]
+    spe = vn / float(vn + matrice[0][1])
+    vp = vraip / float(vraip + matrice[0][1])
+    return sen, spe, vp
+
 
 ####################
 #   </Seance 2>    #
 ####################
 
 def main():
+    seance1()
+
     ###################
-    #   <Seance 1>    #
+    #   <Seance 2>    #
     ###################
-
-    # # Nombre de chromosomes
-    # totalColi = nChromosomes(coli)
-    # totalCholerae = nChromosomes(cholerae)
-    # print "Total number of chromosomes:\n\tE.Coli = " + str(totalColi) + "\n\tVibrio Cholerae = " + str(totalCholerae)
-    #
-    # # Longueur de chromosomes
-    # i = 0
-    # lengthColi = lengthChromosome(coli)
-    # for length in lengthColi:
-    #     i += 1
-    #     print "Length of the " + str(i) + " chromosome from E. Coli = " + str(length)
-    # i = 0
-    # lengthCholerae = lengthChromosome(cholerae)
-    # for length in lengthCholerae:
-    #     i += 1
-    #     print "Length of the " + str(i) + " chromosome from Vibrio Cholerae = " + str(length)
-    #
-    # # Longueur totale du genome
-    # print "Total length of E. Coli = " + str(totalLength(coli))
-    # print "Total length of Vibirio Cholerae = " + str(totalLength(cholerae))
-    #
-    # # Composition en nucleotides
-    # dColi = pourcentage(coli)
-    # for item in dColi:
-    #     print "Percentage of " + item + " in E. Coli = " + str(dColi[item])
-    # dCholerae = pourcentage(cholerae)
-    # for item in dColi:
-    #     print "Percentage of " + item + " in Vibrio Cholerae = " + str(dCholerae[item])
-    #
-    # # Pourcentage en GC global
-    # # Cas ou GC veut dire la chaine GC
-    # # print "Pourcentage en GC global de E. Coli = " + str(gcPercent(newOrder(coli)))
-    # # print "Pourcentage en GC global de Vibrio Cholerae = " + str(gcPercent(newOrder(cholerae)))
-    # # Cas ou on veut la somme des G et des C
-    # print "Percentage of GC in E. Coli = " + str(dColi['G'] + dColi['C'])
-    # print "Percentage of GC in Vibrio Cholerae = " + str(dCholerae['G'] + dCholerae['C'])
-    #
-    # # Découpez le génome en blocs 1kbp non chevauchants
-    # blocsColi = decoupage(coli, tabColi)
-    # print "Number of blocs that we will be analysing from E. Coli = " + str(len(blocsColi))
-    # blocsCholerae = decoupage(cholerae, tabCholerae)
-    # print "Number of blocs that we will be analysing from Vibrio Cholerae = " + str(len(blocsCholerae))
-    #
-    # # Histogramme de la distribution de GC
-    # print "Histogram with the distribution of GC in each bloc, uncomment to see graphics."
-    # # histogrammeGCBlocs(blocsColi, "E. Coli")
-    # # histogrammeGCBlocs(blocsCholerae, "Vibrio Cholerae")
-    #
-    # # ORFs du genome choisi et creation du fichier FASTA
-    # if os.path.exists("orfFasta.fsa"):
-    #     os.remove("orfFasta.fsa")
-    # print "Creation of FASTA file for submission at NCBI's glimmer tool for Vibrio Cholerae"
-    # print str(len(orfs(newOrder(cholerae)))) + " = Length of the ORFs"
-    #
-    # Extraire sequences codantes des genes a partir du fichier tab
-    # if os.path.exists("genes_codants_Vibrio_cholerae.fasta"):
-    #     os.remove("genes_codants_Vibrio_cholerae.fasta")
-    # print "Creation of FASTA file with coding genes for Vibrio Cholerae"
-    # genes(cholerae, tabCholerae)
-    #
-    # # print "Attention, on a 74122 genes codants si on calcule les ORFs, mais avec le fichier tab, on en trouve que 3504"
-    # # print "On va supposer que c'est bon car on trouve 37275 ATG dans le genome du Vibrio Cholerae"
-    # # print "Et donc, si on prend en compte que on doit calculer aussi son complementaire, ça fait du sens"
-    #
-    # # Creation d'un fichier avec les genes non codants, cad,
-    # # les parties du gene qui ne sont pas dans le fichier tab
-    # if os.path.exists("genes_non_codants_Vibrio_cholerae.fasta"):
-    #     os.remove("genes_non_codants_Vibrio_cholerae.fasta")
-    # print "Creation of FASTA file with non-coding genes for Vibrio Cholerae"
-    # nonCodants(cholerae, tabCholerae)
-    #
-    # # Calculer pour chaque gene son pourcentage en GC et mettre a jour le fichier tab
-    # print "Updating FASTA file with coding genes and adding percentage in GC nucleotides"
-    # updateTabFile("genes_codants_Vibrio_cholerae.fasta")
-    #
-    # # Histogramme des pourcentages en GC des gènes
-    # print "Histogram with the distribution of GC in each coding gene for Vibrio Cholerae, uncomment to see graphic"
-    # # histogramGCgenes("genes_codants.fasta", "Pourcentage en GC des genes codants de Vibrio Cholerae")
-    #
-    # print "Now we do everything we need to do to compare it to E. Coli, we will be using the tab file"
-    # if os.path.exists("genes_codants_Escherichia.coli.fasta"):
-    #     os.remove("genes_codants_Escherichia.coli.fasta")
-    # print "\tCreation of FASTA file with coding genes for E. Coli"
-    # genes(coli, tabColi)
-    #
-    # print "\tUpdating FASTA file with coding genes and adding percentage in GC nucleotides"
-    # updateTabFile("genes_codants_Escherichia.coli.fasta")
-    #
-    # print "\tHistogram with the distribution of GC in each coding gene for E. Coli, uncomment to see graphic"
-    # # histogramGCgenes("genes_codants_Escherichia.coli.fasta", "Pourcentage en GC des genes codants de E. Coli")
-    #
-    # print "Cleaning up"
-    # cleanUp()
-
-    ####################
-    #   </Seance 1>    #
-    ####################
-
-
-    ##################
-    #   <Seance 2>   #
-    ##################
-
-    # cleanGlimmerFile("glimmer_data.txt")
 
     # Produire un fichier d'annotation des gènes en utilisant Glimmer -> glimmer_data.txt
     # Longueurs des genes predits avec Glimmer
@@ -490,15 +528,24 @@ def main():
     print "\tCalculating lengths of ORFs from the Glimmer file for E. Coli, uncomment to see graphics"
     lengthGlimmer("glimmer_data_coli.txt", "Lengths of tab file for E. Coli")
 
-    # print "Removing previous FASTA files..."
-    # os.remove("*.fasta")
+    print "Creating binary list from the Glimmer file of Vibrio Cholerae and its genome"
+    glimmerBinary = binaryGlimmer("./glimmer_data.txt", cholerae)
 
-    print "\tCalculating lengths from tab file for E. Coli, uncomment to see graphics"
-    lengthTabFile(tabColi, "Lengths of tab file for E. Coli")
+    print "Creating binary list from the .tab file of Vibrio Cholerae and its genome"
+    tabBinary = binaryTab(tabCholerae, cholerae)
 
-    print "Creating new FASTA files for E. Coli and Vibrio Cholerae, with coding and non coding genes"
-    genes(cholerae, tabCholerae)
-    genes(coli, tabColi)
+    print "Comparing both glimmer and tab binaries: "
+    annotation = compare_intervalle(glimmerBinary, tabBinary)
+    print "\tTrue negatives: " + str(annotation[0][0])
+    print "\tFalse positives: " + str(annotation[0][1])
+    print "\tFalse negatives: " + str(annotation[1][0])
+    print "\tTrue positives: " + str(annotation[1][1])
+
+    print "And lastly, we look at the sensitivity and the specifity:"
+    sen, spe, vp = senSpe(annotation)
+    print "\tSensibility = " + str(sen)
+    print "\tSpecificity = " + str(spe)
+    print "\tRate of true positives = " + str(vp)
 
     ####################
     #   </Seance 2>    #

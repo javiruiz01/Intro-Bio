@@ -1,7 +1,6 @@
-        
-GLIMMER    (ver.    3.02;    iterated)    predictions:
-    orfID    start    end    frame    score
---------    -----    -----    --    -----
+>GLIMMER    (ver.    3.02;    iterated)    predictions:
+>    orfID    start    end    frame    score
+> --------    -----    -----    --    -----
 >NC_002505.1    Vibrio    cholerae    O1    biovar    El    Tor    str.    N16961    chromosome    I,    complete    sequence
 orf00002    806    372    -3    9.51
 orf00003    2177    816    -3    11.18
