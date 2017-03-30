@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<Session genome="/Users/jruiz/Downloads/sceance1/Data/Vibrio_cholerae_genome.fasta" hasGeneTrack="false" hasSequenceTrack="true" locus="NC_002505.1:1005-1066" path="/Users/jruiz/PycharmProjects/Bio-Project/igv_session.xml" version="8">
+    <Resources>
+        <Resource path="/Users/jruiz/PycharmProjects/Bio-Project/GCF_000006745.1_ASM674v1_genomic.gff"/>
+    </Resources>
+    <Panel height="650" name="FeaturePanel" width="1423">
+        <Track altColor="0,0,178" autoScale="false" color="0,0,178" displayMode="COLLAPSED" featureVisibilityWindow="-1" fontSize="10" id="Reference sequence" name="Reference sequence" sortable="false" visible="true"/>
+        <Track altColor="0,0,178" autoScale="false" clazz="org.broad.igv.track.FeatureTrack" color="0,0,178" displayMode="COLLAPSED" featureVisibilityWindow="-1" fontSize="10" id="/Users/jruiz/PycharmProjects/Bio-Project/GCF_000006745.1_ASM674v1_genomic.gff" name="GCF_000006745.1_ASM674v1_genomic.gff" renderer="BASIC_FEATURE" sortable="false" visible="true" windowFunction="count"/>
+    </Panel>
+    <PanelLayout dividerFractions="0.009077155824508321"/>
+    <Regions>
+        <Region chromosome="NC_002505.1" description="" end="1066" start="1005"/>
+    </Regions>
+    <HiddenAttributes>
+        <Attribute name="DATA FILE"/>
+        <Attribute name="DATA TYPE"/>
+        <Attribute name="NAME"/>
+    </HiddenAttributes>
+</Session>

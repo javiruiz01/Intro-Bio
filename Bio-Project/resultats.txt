@@ -1,0 +1,97 @@
+#################################### GENOME 1 ####################################
+Total number of chromosomes:
+	E.Coli = 1
+	Vibrio Cholerae = 1
+Length of the 1 chromosome from E. Coli = 4641652
+Length of the 1 chromosome from Vibrio Cholerae = 2961149
+Total length of E. Coli = 4641652
+Total length of Vibirio Cholerae = 2961149
+Percentage of A in E. Coli = 0.246192950269
+Percentage of C in E. Coli = 0.254239438889
+Percentage of T in E. Coli = 0.245899951138
+Percentage of G in E. Coli = 0.253667659704
+Percentage of A in Vibrio Cholerae = 0.259775512816
+Percentage of C in Vibrio Cholerae = 0.237537523441
+Percentage of T in Vibrio Cholerae = 0.263265036646
+Percentage of G in Vibrio Cholerae = 0.239410782774
+Percentage of GC in E. Coli = 0.507907098593
+Percentage of GC in Vibrio Cholerae = 0.476948306215
+Number of blocs that we will be analysing from E. Coli = 2630
+Number of blocs that we will be analysing from Vibrio Cholerae = 1632
+Histogram with the distribution of GC in each bloc, uncomment to see graphics.
+Creation of FASTA file for submission at NCBI's glimmer tool for Vibrio Cholerae
+12 = Length of the ORFs
+Creation of FASTA file with coding genes and another FASTA file for non-coding genes for Vibrio Cholerae
+Updating FASTA file with coding genes and adding percentage in GC nucleotides
+Histogram with the distribution of GC in each coding gene for Vibrio Cholerae, uncomment to see graphic
+Now we do everything we need to do to compare it to E. Coli, we will be using the tab file
+	Creation of FASTA file with coding genes and another for non-coding genes for E. Coli
+	Updating FASTA file with coding genes and adding percentage in GC nucleotides
+	Histogram with the distribution of GC in each coding gene for E. Coli, uncomment to see graphic
+Cleaning up
+Calculating lengths of ORFs from the Glimmer file for Vibrio Cholerae, uncomment to see graphics
+Calculating lengths from tab file of Vibrio Cholerae
+We do the same thing for E. Coli, uncomment to see graphics
+	Calculating lengths of ORFs from the Glimmer file for E. Coli, uncomment to see graphics
+Creating binary list from the Glimmer file of Vibrio Cholerae and its genome
+Creating binary list from the .tab file of Vibrio Cholerae and its genome
+Comparing both glimmer and tab binaries:
+	True negatives: 346824
+	False positives: 32818
+	False negatives: 70459
+	True positives: 2511048
+And lastly, we look at the sensitivity and the specifity:
+	Sensibility = 0.972706252588
+	Specificity = 0.913555402195
+	Rate of true positives = 0.987099163242
+
+Process finished with exit code 0
+
+#################################### GENOME 2 ####################################
+
+Total number of chromosomes:
+	E.Coli = 1
+	Vibrio Cholerae = 1
+Length of the 1 chromosome from E. Coli = 4641652
+Length of the 1 chromosome from Vibrio Cholerae = 1072315
+Total length of E. Coli = 4641652
+Total length of Vibirio Cholerae = 1072315
+Percentage of A in E. Coli = 0.246192950269
+Percentage of C in E. Coli = 0.254239438889
+Percentage of T in E. Coli = 0.245899951138
+Percentage of G in E. Coli = 0.253667659704
+Percentage of A in Vibrio Cholerae = 0.264851279708
+Percentage of C in Vibrio Cholerae = 0.232653651213
+Percentage of T in Vibrio Cholerae = 0.266009521456
+Percentage of G in Vibrio Cholerae = 0.236481817376
+Percentage of GC in E. Coli = 0.507907098593
+Percentage of GC in Vibrio Cholerae = 0.469135468589
+Number of blocs that we will be analysing from E. Coli = 2630
+Number of blocs that we will be analysing from Vibrio Cholerae = 613
+Histogram with the distribution of GC in each bloc, uncomment to see graphics.
+Creation of FASTA file for submission at NCBI's glimmer tool for Vibrio Cholerae
+12 = Length of the ORFs
+Creation of FASTA file with coding genes and another FASTA file for non-coding genes for Vibrio Cholerae
+Updating FASTA file with coding genes and adding percentage in GC nucleotides
+Histogram with the distribution of GC in each coding gene for Vibrio Cholerae, uncomment to see graphic
+Now we do everything we need to do to compare it to E. Coli, we will be using the tab file
+	Creation of FASTA file with coding genes and another for non-coding genes for E. Coli
+	Updating FASTA file with coding genes and adding percentage in GC nucleotides
+	Histogram with the distribution of GC in each coding gene for E. Coli, uncomment to see graphic
+Calculating lengths of ORFs from the Glimmer file for Vibrio Cholerae, uncomment to see graphics
+Calculating lengths from tab file of Vibrio Cholerae
+We do the same thing for E. Coli, uncomment to see graphics
+	Calculating lengths of ORFs from the Glimmer file for E. Coli, uncomment to see graphics
+Creating binary list from the Glimmer file of Vibrio Cholerae and its genome
+Creating binary list from the .tab file of Vibrio Cholerae and its genome
+Comparing both glimmer and tab binaries:
+	True negatives: 152804
+	False positives: 38127
+	False negatives: 40309
+	True positives: 841075
+And lastly, we look at the sensitivity and the specifity:
+	Sensibility = 0.954266244906
+	Specificity = 0.800310059655
+	Rate of true positives = 0.956634539048
+
+Process finished with exit code 0
