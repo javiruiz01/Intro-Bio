@@ -419,7 +419,7 @@ def composition_nuc(tab_file, genome_1, genome_2, name):
     gen_1 = newOrder(genome_1)
     gen_2 = newOrder(genome_2)
     newFile = open(name, "a+")
-    newFile.write("#Chromosome\tstart\tend\tpercGC\tpercA\tpercT\n")
+    newFile.write("Chromosome\tstart\tend\tfeature\tpercGC\tpercA\tpercT\n")
     for line in tab:
         if line.startswith("#"):
             continue
@@ -434,16 +434,64 @@ def composition_nuc(tab_file, genome_1, genome_2, name):
         Dgc = gcBlocPercentage(data)
         Dat = atPercent(data)
         newFile.write(
-            name + "\t" + str(start) + "\t" + str(end) + "\t" + str(Dgc['C'] + Dgc['G']) + "\t" + str(Dat['A']) + "\t"
+            name + "\t" + str(start) + "\t" + str(end) + "\tNONE\t" + str(Dgc['C'] + Dgc['G']) + "\t" + str(
+                Dat['A']) + "\t"
             + str(Dat['T']) + "\n")
     tab.close()
     newFile.close()
     return
 
 
-def blocs50(fasta_file):
-    file = newOrder(fasta_file)
-    
+# Decoupage en blocs de 50 bp, ils peuvent se chevaucher
+def blocs50(fasta_file, chromosome_name):
+    nucleotides = newOrder(fasta_file)
+    blocs = []
+    bloc = ''
+    counter = 0
+    for i in range(0, len(nucleotides)):
+        if counter == 50:
+            blocs.append(bloc)
+            bloc = ''
+            counter = 0
+        bloc += nucleotides[i]
+        counter += 1
+    blocs.append(bloc)
+    newFile = open("50bp.ivg", "a+")
+    if os.path.getsize("./50bp.ivg") == 0:
+        newFile.write("name\tstart\tend\tfeature\t%GC\n")
+    position = 0
+    for bloc in blocs:
+        d = gcBlocPercentage(bloc)
+        end = str(position + len(bloc))
+        newFile.write(
+            chromosome_name + "\t" + str(position) + "\t" + end + "\tNONE\t" + str(float(d['G'] + d['C'])) + "\n")
+        position = int(end) + 1
+    newFile.close()
+    return newFile
+
+
+# Deuxieme fichier igv avec le pourcentage de GC des regions annotees
+# Faire attention, glimmer file et genome file doivent etre du meme chromosome
+def geneAnnotesIGV(glimmer_file, genome_file, chromosome_name):
+    glimmer = open(glimmer_file, "r")
+    genome = newOrder(genome_file)
+    newFile = open("./genes_annotes.ivg", "a+")
+    if os.path.getsize("./genes_annotes.ivg") == 0:
+        newFile.write("name\tstart\tend\tfeature\t%GC\n")
+    for line in glimmer:
+        if not line.startswith("orf"):
+            continue
+        start = line.split("    ")[1]
+        end = line.split("    ")[2]
+        if int(start) > int(end):
+            start, end = end, start
+        d = gcBlocPercentage(genome[int(start):int(end)])
+        newFile.write(
+            chromosome_name + "\t" + start + "\t" + end + "\tNONE\t" + str(float(d['G'] + d['C'])) + "\n")
+    newFile.close()
+    glimmer.close()
+    return newFile
+
 
 def main():
     # Nombre de chromosomes
@@ -573,6 +621,22 @@ def main():
         os.remove("./IVG.ivg")
     composition_nuc("./data/Vibrio_cholerae_full.tab", "./data/Vibrio_cholerae_genome.fasta",
                     "./data/Vibrio_cholerae_genome_2.fasta", "IVG.ivg")
+
+    print "Making new file with percentage of GC in blocs of 50 bp of Vibrio Cholerae, first chromosome"
+    if os.path.exists("./50bp.ivg"):
+        os.remove("./50bp.ivg")
+    blocs50("./data/Vibrio_cholerae_genome.fasta", "NC_002505.1")
+
+    print "\tCompleting the file with the second chromosome"
+    blocs50("./data/Vibrio_cholerae_genome_2.fasta", "NC_002506.1")
+
+    print "Making new file with percentage of GC in annotated genomes for Vibrio Cholerae, first chromosome"
+    if os.path.exists("./genes_annotes.ivg"):
+        os.remove("./genes_annotes.ivg")
+    geneAnnotesIGV("./glimmer_data.txt", "./data/Vibrio_cholerae_genome.fasta", "NC_002505.1")
+
+    print "\tCompleting the file with the second chromosome"
+    geneAnnotesIGV("./glimmer_data_2.txt", "./data/Vibrio_cholerae_genome_2.fasta", "NC_002506.1")
 
 
 main()
