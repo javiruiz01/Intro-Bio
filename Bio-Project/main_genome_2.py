@@ -92,12 +92,12 @@ def main():
 
     # Calculer pour chaque gene son pourcentage en GC et mettre a jour le fichier tab
     print "Updating FASTA file with coding genes and adding percentage in GC nucleotides"
-    updateFileCholerae = seance1.updateFastaFile(genesFileGenericCholerae.name)
+    updateFileCholerae = seance1.updateFastaFile(genesFileGenericCholerae.name, "cholerae_2")
     seance1.updateTabFile(updateFileCholerae, "./data/Vibrio_cholerae_2.tab")
 
     # Histogramme des pourcentages en GC des gènes
     print "Histogram with the distribution of GC in each coding gene for Vibrio Cholerae, uncomment to see graphic"
-    # histogramGCgenes("genes_codants.fasta", "Pourcentage en GC des genes codants de Vibrio Cholerae")
+    seance1.histogramGCgenes("genes_updated_cholerae_2.fasta", "Pourcentage en GC des genes de Vibrio Cholerae - Chromosome 2")
 
     print "Now we do everything we need to do to compare it to E. Coli, we will be using the tab file"
     if os.path.exists("genes_codants_Escherichia.coli.fasta"):
@@ -106,7 +106,7 @@ def main():
     genesFileGenericColi = seance1.genes(coli, tabColi)
 
     print "\tUpdating FASTA file with coding genes and adding percentage in GC nucleotides"
-    seance1.updateFastaFile(genesFileGenericColi.name)
+    seance1.updateFastaFile(genesFileGenericColi.name, "coli")
 
     print "\tHistogram with the distribution of GC in each coding gene for E. Coli, uncomment to see graphic"
     # histogramGCgenes("genes_codants_Escherichia.coli.fasta", "Pourcentage en GC des genes codants de E. Coli")

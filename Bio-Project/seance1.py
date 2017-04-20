@@ -121,13 +121,30 @@ def atPercent(sequence):
 # Histogramme de la distribution de GCs
 def histogrammeGCBlocs(blocs, name):
     percents = []
+    positions = []
+    position = 0
+    for bloc in blocs:
+        positions.append(position)
+        position += len(bloc)
+        d = gcBlocPercentage(bloc)
+        percents.append(d['C'] + d['G'])
+    print len(blocs)
+    x_axis_list = range(len(positions))
+    plt.plot(x_axis_list, percents)
+    plt.title(name)
+    plt.savefig("./histogrammes/" + name + ".png")
+    plt.show()
+
+def histogrammeGCBlocs_hist(blocs, name):
+    percents = []
     for bloc in blocs:
         d = gcBlocPercentage(bloc)
         percents.append(d['C'] + d['G'])
-        # plt.hist(percents)
-        # plt.title(name)
-        # plt.show()
-
+    print len(blocs)
+    plt.plot(percents)
+    plt.title(name)
+    plt.savefig("./histogrammes/" + name + "_hist.png")
+    plt.show()
 
 # ORFs du genome choisi
 def orfs(sequence):
@@ -205,13 +222,12 @@ def printToFile(cds):
 
 # Extraire sequences codantes des genes a partir du fichier tab et du genome
 def genes(genomeFile, tabFile):
-    print "hello"
     tab = open(tabFile, 'r')
     genome = newOrder(genomeFile)
     next(tab)  # On saute la premiere ligne
     fastaFile = open("genes_codants_" + os.path.basename(tabFile)[0:-4] + ".fasta", 'a+')
     fastaNonCodants = open("genes_non_codants_" + os.path.basename(tabFile)[0:-4] + ".fasta", 'a+')
-    fastaGeneric = open("genes.fasta", "a+")
+    fastaGeneric = open("genes_" + os.path.basename(tabFile)[0:-4] + ".fasta", "a+")
     globalCounter = 0
     counter = 0
     counter_non_codants = 0
@@ -306,8 +322,9 @@ def histogramGCgenes(fastaFile, name):
         if line.startswith(">"):
             continue
         percents.append(float(line.split("\t")[0]))
-    # plt.hist(percents)
+    plt.hist(percents)
     plt.title(name)
+    plt.savefig("./histogrammes/" + name + ".png")
     plt.show()
 
 
@@ -323,8 +340,9 @@ def cleanUp():
 
 # Histogramme generique
 def histogramme(list, name):
-    # plt.hist(list)
+    plt.hist(list)
     plt.title(name)
+    plt.savefig("./histogrammes/" + name + ".png")
     plt.show()
 
 
@@ -336,7 +354,7 @@ def lengthGlimmer(glimmerFile, name):
         if not line.startswith("orf"):
             continue
         lengths.append(abs(int(line.split("    ")[1]) - int(line.split("    ")[2])))
-    # histogramme(lengths, name)
+    histogramme(lengths, name)
     return lengths
 
 
@@ -348,7 +366,7 @@ def lengthTabFile(tabFile, name):
         if line.startswith("#"):
             continue
         lengths.append(abs(int(line.split("\t")[2]) - int(line.split("\t")[3])))  # Start - End
-    # histogramme(lengths, name)
+    histogramme(lengths, name)
     return lengths
 
 
@@ -419,7 +437,7 @@ def composition_nuc(tab_file, genome_1, genome_2, name):
     gen_1 = newOrder(genome_1)
     gen_2 = newOrder(genome_2)
     newFile = open(name, "a+")
-    newFile.write("Chromosome\tstart\tend\tfeature\tpercGC\tpercA\tpercT\n")
+    newFile.write("Chromosome\tStart\tEnd\tFeature\tPercGC\tPercA\tPercT\n")
     for line in tab:
         if line.startswith("#"):
             continue
@@ -456,9 +474,9 @@ def blocs50(fasta_file, chromosome_name):
         bloc += nucleotides[i]
         counter += 1
     blocs.append(bloc)
-    newFile = open("50bp.ivg", "a+")
-    if os.path.getsize("./50bp.ivg") == 0:
-        newFile.write("name\tstart\tend\tfeature\t%GC\n")
+    newFile = open("50bp.igv", "a+")
+    if os.path.getsize("./50bp.igv") == 0:
+        newFile.write("Chromosome\tStart\tEnd\tFeature\t%GC\n")
     position = 0
     for bloc in blocs:
         d = gcBlocPercentage(bloc)
@@ -470,14 +488,54 @@ def blocs50(fasta_file, chromosome_name):
     return newFile
 
 
+def blocs50_v0(tab_file, genome1, genome2):
+    tab = open(tab_file, "r")
+    gen1 = newOrder(genome1)
+    gen2 = newOrder(genome2)
+    newFile = open("./50bp.igv", "a+")
+    if os.path.getsize("./50bp.igv") == 0:
+        newFile.write("Chromosome\tStart\tEnd\tFeature\t%GC\n")
+    for line in tab:
+        if line.startswith("#"):
+            continue
+        start = line.split("\t")[2]  # Start
+        end = line.split("\t")[3]  # End
+        chromosome = line.split("\t")[0]
+        name = line.split("\t")[1]
+        def_end = int(end)
+        if chromosome == "I":
+            data = gen1[int(start) - 1:int(end) - 3]
+        else:
+            data = gen2[int(start) - 1: int(end) - 3]
+        for i in range(0, len(data), 50):
+            if i == 0:
+                position = int(start) + i
+            else:
+                position = int(end) + 1
+            bloc = data[i:int(i) + 50]
+            bloc = bloc[0: (bloc.count("A") + bloc.count("T") + bloc.count("G") + bloc.count("C"))]
+            if len(bloc) != 50:
+                end = def_end
+            else:
+                end = position + len(bloc)
+            d = gcBlocPercentage(bloc)
+            newFile.write(
+                name + "\t" + str(position) + "\t" + str(end) + "\tNONE\t" + str(float(d['G'] + d['C'])) + "\n"
+            )
+        position = 0
+    tab.close()
+    newFile.close()
+    return newFile
+
+
 # Deuxieme fichier igv avec le pourcentage de GC des regions annotees
 # Faire attention, glimmer file et genome file doivent etre du meme chromosome
 def geneAnnotesIGV(glimmer_file, genome_file, chromosome_name):
     glimmer = open(glimmer_file, "r")
     genome = newOrder(genome_file)
-    newFile = open("./genes_annotes.ivg", "a+")
-    if os.path.getsize("./genes_annotes.ivg") == 0:
-        newFile.write("name\tstart\tend\tfeature\t%GC\n")
+    newFile = open("./genes_annotes.igv", "a+")
+    if os.path.getsize("./genes_annotes.igv") == 0:
+        newFile.write("Chromosome\tStart\tEnd\tFeature\t%GC\n")
     for line in glimmer:
         if not line.startswith("orf"):
             continue
@@ -485,7 +543,7 @@ def geneAnnotesIGV(glimmer_file, genome_file, chromosome_name):
         end = line.split("    ")[2]
         if int(start) > int(end):
             start, end = end, start
-        d = gcBlocPercentage(genome[int(start):int(end)])
+        d = gcBlocPercentage(complementaire(genome[int(start):int(end)]))
         newFile.write(
             chromosome_name + "\t" + start + "\t" + end + "\tNONE\t" + str(float(d['G'] + d['C'])) + "\n")
     newFile.close()
@@ -534,13 +592,18 @@ def main():
     # Découpez le génome en blocs 1kbp non chevauchants
     blocsColi = decoupage(coli, tabColi)
     print "Number of blocs that we will be analysing from E. Coli = " + str(len(blocsColi))
-    blocsCholerae = decoupage(cholerae, tabCholerae)
-    print "Number of blocs that we will be analysing from Vibrio Cholerae = " + str(len(blocsCholerae))
+    blocsCholerae_1 = decoupage(cholerae, tabCholerae)
+    blocsCholerae_2 = decoupage("./data/Vibrio_cholerae_genome_2.fasta", "./data/Vibrio_cholerae_2.tab")
+    print "Number of blocs that we will be analysing from Vibrio Cholerae = " + str(len(blocsCholerae_1))
 
     # Histogramme de la distribution de GC
     print "Histogram with the distribution of GC in each bloc, uncomment to see graphics."
-    # histogrammeGCBlocs(blocsColi, "Distribution of GC in E. Coli")
-    # histogrammeGCBlocs(blocsCholerae, "Distribution of GC in Vibrio Cholerae")
+    # histogrammeGCBlocs(blocsColi, "Distribution of GC in E. Coli by 1000 kbp")
+    # histogrammeGCBlocs(blocsCholerae_1, "Distribution of GC in Vibrio Cholerae first chromosome by 1000 kbp")
+    # histogrammeGCBlocs(blocsCholerae_2, "Distribution of GC in Vibrio Cholerae second chromosome by 1000 kbp")
+    histogrammeGCBlocs_hist(blocsColi, "Distribution of GC in E. Coli by 1000 kbp (histogram)")
+    histogrammeGCBlocs_hist(blocsCholerae_1, "Distribution of GC in Vibrio Cholerae first chromosome by 1000 kbp (histogram)")
+    histogrammeGCBlocs_hist(blocsCholerae_2, "Distribution of GC in Vibrio Cholerae second chromosome by 1000 kbp (histogram)")
 
     # ORFs du genome choisi et creation du fichier FASTA
     if os.path.exists("orfFasta.fsa"):
@@ -565,7 +628,7 @@ def main():
 
     # Histogramme des pourcentages en GC des gènes
     print "Histogram with the distribution of GC in each coding gene for Vibrio Cholerae, uncomment to see graphic"
-    # histogramGCgenes("genes_updated_cholerae.fasta", "Pourcentage en GC des genes codants de Vibrio Cholerae")
+    histogramGCgenes("genes_updated_cholerae.fasta", "Pourcentage en GC des genes de Vibrio Cholerae - Chromosome 1")
 
     print "Now we do everything we need to do to compare it to E. Coli, we will be using the tab file"
     if os.path.exists("genes_codants_Escherichia.coli.fasta"):
@@ -578,7 +641,7 @@ def main():
     updateTabFile(updateFile_Coli, "./data/Escherichia.coli.tab")
 
     print "\tHistogram with the distribution of GC in each coding gene for E. Coli, uncomment to see graphic"
-    # histogramGCgenes("genes_updated_coli.fasta", "Pourcentage en GC des genes codants de E. Coli")
+    histogramGCgenes("genes_updated_coli.fasta", "Pourcentage en GC des genes de E. Coli")
 
     print "Cleaning up"
     cleanUp()
@@ -586,35 +649,58 @@ def main():
     # Produire un fichier d'annotation des gènes en utilisant Glimmer -> glimmer_data.txt
     # Longueurs des genes predits avec Glimmer
     print "Calculating lengths of ORFs from the Glimmer file for Vibrio Cholerae, uncomment to see graphics"
-    lengthGlimmer("./glimmer_data.txt", "Lengths of Glimmer file for Vibrio Cholerae")
+    # lengthGlimmer("./glimmer_data.txt", "Lengths of Glimmer file for Vibrio Cholerae Chromosome 1")
+    # lengthGlimmer("./glimmer_data_2.txt", "Lengths of Glimmer file for Vibrio Cholerae Chromosome 2")
 
     # Longueur des genes du fichier tab
     print "Calculating lengths from tab file of Vibrio Cholerae"
-    lengthTabFile(tabCholerae, "Lengths of tab file for Vibrio Cholerae")
+    # lengthTabFile(tabCholerae, "Lengths of tab file for Vibrio Cholerae chromosome 1")
+    # lengthTabFile("./data/Vibrio_cholerae_2.tab", "Length of tab file for Vibrio Cholerae chromosome 2")
 
     # Maintenant la meme chose pour E. Coli
     print "We do the same thing for E. Coli, uncomment to see graphics"
     print "\tCalculating lengths of ORFs from the Glimmer file for E. Coli, uncomment to see graphics"
-    lengthGlimmer("glimmer_data_coli.txt", "Lengths of tab file for E. Coli")
+    # lengthGlimmer("glimmer_data_coli.txt", "Lengths of Glimmer file for E. Coli")
+    lengthTabFile(tabColi, "Lengths of tab file for E. Coli")
 
-    print "Creating binary list from the Glimmer file of Vibrio Cholerae and its genome"
+    print "Creating binary list from the Glimmer file of Vibrio Cholerae and its genome - Chromosome 1"
     glimmerBinary = binaryGlimmer("./glimmer_data.txt", cholerae)
 
-    print "Creating binary list from the .tab file of Vibrio Cholerae and its genome"
-    tabBinary = binaryTab(tabCholerae, cholerae)
+    print "Creating binary list from the Glimmer file of Vibrio Cholerae and its genome - Chromosome 2"
+    glimmerBinary_2 = binaryGlimmer("./glimmer_data_2.txt", "./data/Vibrio_cholerae_genome_2.fasta")
 
-    print "Comparing both glimmer and tab binaries: "
+    print "Creating binary list from the .tab file of Vibrio Cholerae and its genome - Chromosome 1"
+    tabBinary = binaryTab(tabCholerae, cholerae)
+    print "Creating binary list from the .tab file of Vibrio Cholerae and its genome - Chromosome 2"
+    tabBinary_2 = binaryTab("./data/Vibrio_cholerae_2.tab", "./data/Vibrio_cholerae_genome_2.fasta")
+
+    print "Comparing both glimmer and tab binaries: Chromosome 1"
     annotation = compare_intervalle(glimmerBinary, tabBinary)
+    print "Comparing both glimmer and tab binaries: Chromosome 2"
+    annotation_2 = compare_intervalle(glimmerBinary_2, tabBinary_2)
+    print "\t\t\tChromosome 1:"
     print "\tTrue negatives: " + str(annotation[0][0])
     print "\tFalse positives: " + str(annotation[0][1])
     print "\tFalse negatives: " + str(annotation[1][0])
     print "\tTrue positives: " + str(annotation[1][1])
 
-    print "And lastly, we look at the sensitivity and the specifity:"
+    print "\t\t\tChromosome 2:"
+    print "\tTrue negatives: " + str(annotation_2[0][0])
+    print "\tFalse positives: " + str(annotation_2[0][1])
+    print "\tFalse negatives: " + str(annotation_2[1][0])
+    print "\tTrue positives: " + str(annotation_2[1][1])
+
+    print "And lastly, we look at the sensitivity and the specifity - Chromosome 1:"
     sen, spe, vp = senSpe(annotation)
     print "\tSensibility = " + str(sen)
     print "\tSpecificity = " + str(spe)
     print "\tRate of true positives = " + str(vp)
+
+    print "And lastly, we look at the sensitivity and the specifity - Chromosome 2:"
+    sen_2, spe_2, vp_2 = senSpe(annotation_2)
+    print "\tSensibility = " + str(sen_2)
+    print "\tSpecificity = " + str(spe_2)
+    print "\tRate of true positives = " + str(vp_2)
 
     print "Making nucleotides composition --> new File IVG.ivg"
     if os.path.exists("./IVG.ivg"):
@@ -623,16 +709,18 @@ def main():
                     "./data/Vibrio_cholerae_genome_2.fasta", "IVG.ivg")
 
     print "Making new file with percentage of GC in blocs of 50 bp of Vibrio Cholerae, first chromosome"
-    if os.path.exists("./50bp.ivg"):
-        os.remove("./50bp.ivg")
+    if os.path.exists("./50bp.igv"):
+        os.remove("./50bp.igv")
     blocs50("./data/Vibrio_cholerae_genome.fasta", "NC_002505.1")
+    # blocs50_v0("./data/Vibrio_cholerae_full.tab", "./data/Vibrio_cholerae_genome.fasta",
+    # "./data/Vibrio_cholerae_genome_2.fasta")
 
     print "\tCompleting the file with the second chromosome"
     blocs50("./data/Vibrio_cholerae_genome_2.fasta", "NC_002506.1")
 
     print "Making new file with percentage of GC in annotated genomes for Vibrio Cholerae, first chromosome"
-    if os.path.exists("./genes_annotes.ivg"):
-        os.remove("./genes_annotes.ivg")
+    if os.path.exists("./genes_annotes.igv"):
+        os.remove("./genes_annotes.igv")
     geneAnnotesIGV("./glimmer_data.txt", "./data/Vibrio_cholerae_genome.fasta", "NC_002505.1")
 
     print "\tCompleting the file with the second chromosome"
